@@ -23,11 +23,22 @@
           <section class="track-card">
             <div class="track-hud">
               <div><span class="hud-label">СТАТУС</span><strong id="phase-label">Ожидание</strong></div>
-              <div class="timer-box"><span class="hud-label" id="timer-label">ДО СТАРТА</span><strong id="timer">10 / 50</strong></div>
-              <div><span class="hud-label">УЧАСТНИКИ</span><strong id="participant-count">0 / 50</strong></div>
+              <div class="timer-box"><span class="hud-label" id="timer-label">ДО СТАРТА</span><strong id="timer">10 / 50</strong><small id="timer-subtitle" class="timer-subtitle">Нужно минимум 10 участников</small></div>
+              <div><span class="hud-label">УЧАСТНИКИ</span><strong id="participant-count">0 / 50</strong><small id="finished-count" class="timer-subtitle">0 / 0</small></div>
             </div>
-            <div id="scene-wrap"><div id="scene-loading">Загружаем 3D-трассу…</div></div>
-            <div class="track-footer"><span>⚡ Бустеры меняют скорость машин</span><span>🏆 Победитель попадёт в рейтинг эфира</span></div>
+            <div id="scene-wrap">
+              <div id="scene-loading">Загружаем 3D-трассу…</div>
+              <div class="finish-overlay" id="finish-overlay" hidden>
+                <section class="finish-card">
+                  <div class="finish-kicker">🏁 ФИНИШ · ПОЛНЫЙ ПРОТОКОЛ</div>
+                  <h2>Все гонщики добрались до финиша!</h2>
+                  <p class="finish-caption">Итоговый порядок определяется фактическим временем пересечения финишной линии.</p>
+                  <div id="finish-results-list" class="finish-results-list"></div>
+                  <div class="finish-footnote">Следующий набор участников откроется автоматически.</div>
+                </section>
+              </div>
+            </div>
+            <div class="track-footer"><span>⚡ Бустеры влияют на скорость и положение машин</span><span>📷 Камера следит за группой и отдаляется при большом отрыве</span><span>🏁 Рейтинг появится после финиша всех участников</span></div>
           </section>
 
           <section class="bottom-grid">
