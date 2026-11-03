@@ -457,10 +457,41 @@ new ResizeObserver(resize).observe(wrap);
 resize();
 $('scene-loading').style.display='none';
 function renderParticipants(){
-  const sorted=[...players].sort((a,b)=>b.distance-a.distance);
-  $('participants-list').innerHTML=sorted.length?sorted.slice(0,50).map((p,i)=>`<div class="participant-row"><span class="car-dot" style="background:${p.color};color:${p.color}"></span><span class="name">${i+1}. ${escapeHtml(p.username)}</span><span class="distance">${Math.floor(p.distance)}.${Math.floor((p.distance%1)*1000)} m</span></div>`).join(''):'<div class="empty-state">Пока никто не присоединился.<br />Напиши «Старт» в тестовом чате справа.</div>';
-  $('participant-count').textContent=`${players.length} / ${config.maxPlayers}`;
-  $('participant-status').textContent=players.length?`${players.length} машин на трассе`:'Ожидаем команду «Старт»';
+  if(phase==='results'){
+    $('participants-list').innerHTML=raceResults.map((p,i)=>
+      '<div class="participant-row result-row"><span class="winner-rank">'+(i+1)+'</span><span class="name">'+escapeHtml(p.username)+'</span><span class="distance">'+formatFinishTime(p.finishTime)+'</span></div>'
+    ).join('')||'<div class="empty-state">Результаты пока отсутствуют.</div>';
+    $('participant-status').textContent='Полный финишный протокол';
+  }else{
+    const sorted=[...players].sort((a,b)=>b.distance-a.distance);
+    $('participants-list').innerHTML=sorted.length?sorted.map((p,i)=>
+      '<div class="participant-row"><span class="car-dot" style="background:'+p.color+';color:'+p.color+'"></span><span class="name">'+(i+1)+'. '+escapeHtml(p.username)+'</span><span class="distance">'+(p.finished?'ФИНИШ':Math.floor(p.distance*100)+'%')+'</span></div>'
+    ).join(''):'<div class="empty-state">Пока никто не присоединился.<br />Напиши «Старт» в LIVE-чате.</div>';
+    const finished=players.filter(p=>p.finished).length;
+    $('participant-status').textContent=players.length?(phase==='race'?finished+' / '+players.length+' на финише':players.length+' машин на стартовой решётке'):'Ожидаем команду «Старт»';
+  }
+  $('participant-count').textContent=players.length+' / '+config.maxPlayers;
+  const finishedCount=$('finished-count');
+  if(finishedCount)finishedCount.textContent=players.filter(p=>p.finished).length+' / '+players.length;
+}
+
+function formatFinishTime(seconds){
+  const value=Math.max(0,Number(seconds)||0);
+  const mins=Math.floor(value/60);
+  const secs=(value%60).toFixed(2).padStart(5,'0');
+  return String(mins).padStart(2,'0')+':'+secs;
+}
+
+function renderFinishOverlay(){
+  const overlay=$('finish-overlay');
+  if(!overlay)return;
+  overlay.hidden=phase!=='results';
+  if(phase!=='results')return;
+  const list=$('finish-results-list');
+  if(!list)return;
+  list.innerHTML=raceResults.map((p,i)=>
+    '<div class="finish-result-row"><span class="finish-place">'+(i===0?'🏆':String(i+1).padStart(2,'0'))+'</span><span class="finish-name">'+escapeHtml(p.username)+'</span><strong class="finish-time">'+formatFinishTime(p.finishTime)+'</strong></div>'
+  ).join('');
 }
 function renderWinners(){
   const rows=Object.entries(winners).sort((a,b)=>b[1].wins-a[1].wins||b[1].lastWin-a[1].lastWin);
@@ -470,30 +501,121 @@ function renderWinners(){
 function renderFeed(){$('activity-feed').innerHTML=activity.length?activity.map(a=>`<div class="feed-item"><span class="feed-time">${a.time}</span><span class="feed-text">${escapeHtml(a.text)}</span></div>`).join(''):'<div class="feed-item muted">События появятся здесь.</div>'}
 function formatTime(sec){sec=Math.max(0,Math.ceil(sec));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}
 function renderStatus(){
-  const phaseText={waiting:'Ожидание',registration:'Регистрация',race:'Гонка'};
-  $('phase-label').textContent=phaseText[phase];$('race-state').textContent=({waiting:'ОЖИДАНИЕ УЧАСТНИКОВ',registration:'РЕГИСТРАЦИЯ ОТКРЫТА',race:'ГОНКА ИДЁТ'})[phase];
-  if(phase==='waiting'){$('timer-label').textContent='УЧАСТНИКОВ ДЛЯ СТАРТА';$('timer').textContent=`${players.length} / ${config.minPlayers}`}
-  else if(phase==='registration'){$('timer-label').textContent='ДО СТАРТА';$('timer').textContent=formatTime((registrationDeadline-Date.now())/1000)}
-  else{$('timer-label').textContent='ДО ФИНИША';$('timer').textContent=formatTime((raceDeadline-Date.now())/1000)}
+  const phaseText={waiting:'Ожидание',registration:'Регистрация',race:'Гонка',results:'Результаты'};
+  const stateText={waiting:'ОЖИДАНИЕ УЧАСТНИКОВ',registration:'РЕГИСТРАЦИЯ ОТКРЫТА',race:'ГОНКА ИДЁТ',results:'ВСЕ МАШИНЫ НА ФИНИШЕ'};
+  $('phase-label').textContent=phaseText[phase]||'Ожидание';
+  $('race-state').textContent=stateText[phase]||stateText.waiting;
+  if(phase==='waiting'){
+    $('timer-label').textContent='УЧАСТНИКОВ ДЛЯ СТАРТА';
+    $('timer').textContent=players.length+' / '+config.minPlayers;
+    if($('timer-subtitle'))$('timer-subtitle').textContent='Нужно минимум '+config.minPlayers+' участников';
+  }else if(phase==='registration'){
+    $('timer-label').textContent='ДО СТАРТА';
+    $('timer').textContent=formatTime((registrationDeadline-Date.now())/1000);
+    if($('timer-subtitle'))$('timer-subtitle').textContent=players.length+' / '+config.maxPlayers+' машин на старте';
+  }else{
+    const elapsed=raceStartedAt?Math.max(0,(Date.now()-raceStartedAt)/1000):0;
+    $('timer-label').textContent='ОБЩЕЕ ВРЕМЯ ГОНКИ';
+    $('timer').textContent=formatTime(elapsed)+' / '+formatTime(config.raceSeconds);
+    if($('timer-subtitle')){
+      const finished=players.filter(p=>p.finished).length;
+      $('timer-subtitle').textContent=phase==='results'
+        ?'Все финишировали • следующий набор скоро'
+        :'Финишировали '+finished+' из '+players.length+' • цель '+formatTime(config.raceSeconds);
+    }
+  }
+  renderFinishOverlay();
 }
 function renderAll(){renderParticipants();renderWinners();renderStatus();}
 function finishRace(){
-  const ranked=[...players].sort((a,b)=>b.distance-a.distance);const winner=ranked[0];
-  if(winner){const key=winner.username;winners[key]??={wins:0,participations:0,lastWin:0};winners[key].wins++;winners[key].lastWin=Date.now();for(const p of players){winners[p.username]??={wins:0,participations:0,lastWin:0};winners[p.username].participations++}saveWinners();addFeed(`🏆 Победитель гонки: ${winner.username}`);notify(`🏆 Победитель: ${winner.username}`)}
-  raceNumber++;players=[];phase='waiting';registrationDeadline=0;raceDeadline=0;syncCars();renderAll();
-  addFeed('Все участники вышли. Открыт набор на следующую гонку.');
-}
-function startRace(){if(phase!=='registration'||players.length<config.minPlayers)return;phase='race';raceDeadline=Date.now()+config.raceSeconds*1000;players.forEach((p,i)=>{p.distance=0;p.effects=[];p.shieldUntil=0});addFeed(`🏁 Гонка №${raceNumber+1} началась! Участников: ${players.length}`);notify('Старт! Удачи участникам!');renderAll()}
-function tick(now){const dt=Math.min((now-lastTick)/1000,.1);lastTick=now;
-  if(phase==='registration'&&Date.now()>=registrationDeadline)startRace();
-  if(phase==='race'){
-    const time=Date.now();for(const p of players){p.effects=p.effects.filter(e=>e.until>time);let mult=1;for(const e of p.effects){if(e.type==='boost')mult=Math.max(mult,e.strength);if(e.type==='slow')mult=Math.min(mult,e.strength);if(e.type==='stun')mult=0}p.distance+=dt*.0032*mult;}
-    if(time>=raceDeadline)finishRace();
+  if(phase!=='race'||!players.length)return;
+  raceResults=[...players].sort((a,b)=>(a.finishTime??Infinity)-(b.finishTime??Infinity));
+  const winner=raceResults[0];
+  if(winner){
+    const key=winner.username;
+    winners[key]??={wins:0,participations:0,lastWin:0};
+    winners[key].wins++;winners[key].lastWin=Date.now();
+    for(const p of players){
+      winners[p.username]??={wins:0,participations:0,lastWin:0};
+      winners[p.username].participations++;
+    }
+    saveWinners();
+    addFeed('🏆 Победитель гонки: '+winner.username+' — '+formatFinishTime(winner.finishTime));
+    notify('🏆 Победитель: '+winner.username);
   }
-  players.forEach(placeCar);renderStatus();renderer.render(scene,camera);requestAnimationFrame(tick);
+  phase='results';
+  addFeed('Все '+players.length+' машин пересекли финиш. Показан полный протокол.');
+  renderAll();
+  renderFinishOverlay();
+  if(resultsTimer)clearTimeout(resultsTimer);
+  resultsTimer=setTimeout(()=>{
+    players=[];
+    raceResults=[];
+    phase='waiting';
+    raceStartedAt=0;
+    registrationDeadline=0;
+    raceDeadline=0;
+    syncCars();
+    renderAll();
+    addFeed('Результаты сохранены. Открыт набор на следующую гонку.');
+  },18000);
+}
+
+function startRace(){
+  if(phase!=='registration'||players.length<config.minPlayers)return;
+  if(resultsTimer){clearTimeout(resultsTimer);resultsTimer=null;}
+  phase='race';
+  raceStartedAt=Date.now();
+  raceDeadline=0;
+  raceResults=[];
+  players.forEach(p=>{
+    p.distance=0;p.effects=[];p.shieldUntil=0;p.finished=false;p.finishTime=null;
+  });
+  addFeed('🏁 Гонка №'+(raceNumber+1)+' началась! Участников: '+players.length);
+  notify('Старт! Пять минут до контрольного финиша!');
+  renderAll();
+}
+
+let lastLeaderboardPaint=0;
+function tick(now){
+  const dt=Math.min((now-lastTick)/1000,.1);
+  lastTick=now;
+  if(phase==='registration'&&Date.now()>=registrationDeadline)startRace();
+
+  if(phase==='race'){
+    const currentTime=Date.now();
+    const elapsed=(currentTime-raceStartedAt)/1000;
+    for(const p of players){
+      if(p.finished)continue;
+      p.effects=p.effects.filter(e=>e.until>currentTime);
+      let multiplier=1;
+      for(const effect of p.effects){
+        if(effect.type==='boost')multiplier=Math.max(multiplier,effect.strength);
+        if(effect.type==='slow')multiplier=Math.min(multiplier,effect.strength);
+        if(effect.type==='stun')multiplier=0;
+      }
+      const rate=multiplier/config.raceSeconds;
+      const secondsToFinish=rate>0?(1-p.distance)/rate:Infinity;
+      p.distance=Math.min(1,p.distance+dt*rate);
+      if(p.distance>=1){
+        p.distance=1;
+        p.finished=true;
+        p.finishTime=Math.max(0,elapsed-dt+Math.min(dt,secondsToFinish));
+        p.effects=[];
+        addFeed('🏁 '+p.username+' пересёк финиш за '+formatFinishTime(p.finishTime));
+      }
+    }
+    if(players.length&&players.every(p=>p.finished))finishRace();
+    if(now-lastLeaderboardPaint>350){renderParticipants();lastLeaderboardPaint=now;}
+  }
+
+  players.forEach(placeCar);
+  updateRaceCamera(dt);
+  renderStatus();
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
-
 function renderGiftRules(){
   $('gift-rules').innerHTML=config.gifts.map((g,i)=>`<div class="gift-rule" data-index="${i}"><input class="gift-name" aria-label="Название подарка" value="${escapeHtml(g.name)}" /><select class="gift-effect" aria-label="Эффект"><option value="boost" ${g.effect==='boost'?'selected':''}>Ускорение</option><option value="shield" ${g.effect==='shield'?'selected':''}>Щит</option><option value="slow" ${g.effect==='slow'?'selected':''}>Замедление лидера</option><option value="pushback" ${g.effect==='pushback'?'selected':''}>Сдвиг назад</option><option value="stun" ${g.effect==='stun'?'selected':''}>Оглушение</option></select><input class="gift-duration" type="number" min="1" max="60" title="Длительность, секунды" value="${Number(g.duration)||5}" /><input class="gift-strength" type="number" min="0.1" max="5" step="0.1" title="Сила эффекта" value="${Number(g.strength)||1}" /><button class="remove-rule" title="Удалить">×</button></div>`).join('');
   $('gift-rules').querySelectorAll('.remove-rule').forEach(btn=>btn.addEventListener('click',e=>{const i=Number(e.currentTarget.closest('.gift-rule').dataset.index);config.gifts.splice(i,1);saveConfig();renderGiftRules();renderDemoGifts()}));
