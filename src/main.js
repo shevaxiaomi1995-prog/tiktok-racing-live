@@ -104,8 +104,8 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color('#9fc9e8');
 scene.fog=new THREE.Fog('#9fc9e8',85,175);
 
-const camera=new THREE.PerspectiveCamera(43,1,.1,260);
-camera.position.set(0,66,78);
+const camera=new THREE.PerspectiveCamera(38,1,.1,260);
+camera.position.set(0,38,47);
 camera.lookAt(0,0,0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -392,11 +392,6 @@ function makeCar(color,name){
       rim.rotation.z=Math.PI/2;wheelGroup.add(rim);
       const hub=new THREE.Mesh(new THREE.CylinderGeometry(.085,.085,.28,12),chrome);
       hub.rotation.z=Math.PI/2;wheelGroup.add(hub);
-      for(let spoke=0;spoke<6;spoke++){
-        const angle=spoke*Math.PI/3;
-        const bar=new THREE.Mesh(new THREE.BoxGeometry(.035,.04,.38),chrome);
-        bar.position.set(0,Math.cos(angle)*.16,Math.sin(angle)*.16);bar.rotation.x=angle;wheelGroup.add(bar);
-      }
       wheelGroup.position.set(side*.91,.42,z);root.add(wheelGroup);wheelParts.push(wheelGroup);
     }
   }
@@ -417,8 +412,12 @@ function makeCar(color,name){
   const stripe=new THREE.Mesh(new THREE.BoxGeometry(.16,.025,3.65),new THREE.MeshStandardMaterial({color:'#ffffff',emissive:'#ffffff',emissiveIntensity:.35}));
   stripe.position.set(0,1.17,-.03);root.add(stripe);
 
-  const glow=new THREE.PointLight(color,2.3,6);glow.position.set(0,.5,0);root.add(glow);
-  root.userData.aura=glow;
+  const underGlow=new THREE.Mesh(
+    new THREE.BoxGeometry(1.45,.07,2.8),
+    new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.55,transparent:true,opacity:.72})
+  );
+  underGlow.position.set(0,.18,0);root.add(underGlow);
+  root.userData.glowMaterial=underGlow.material;
   root.userData.wheels=wheelParts;
   root.add(makeNameSprite(name,color));
   return root;
@@ -444,7 +443,7 @@ function placeCar(p,index){
   const pos=s.point.clone().addScaledVector(s.normal,lane);
   p.mesh.position.set(pos.x,.11+Math.sin(performance.now()*.006+index)*.018,pos.z);
   p.mesh.rotation.y=Math.atan2(-s.tangent.x,-s.tangent.z);
-  p.mesh.userData.aura.intensity=p.effects.some(e=>e.type==='boost')?5.5:2.3;
+  if(p.mesh.userData.glowMaterial)p.mesh.userData.glowMaterial.emissiveIntensity=p.effects.some(e=>e.type==='boost')?1.8:.55;
   for(const wheel of p.mesh.userData.wheels||[])wheel.rotation.x-=.08;
 }
 function resize(){
