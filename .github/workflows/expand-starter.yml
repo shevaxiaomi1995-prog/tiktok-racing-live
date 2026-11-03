@@ -3,7 +3,7 @@ name: Expand starter project
 on:
   push:
     paths:
-      - ".bootstrap/starter.zip.xz.b64"
+      - ".bootstrap/complete.flag"
 
 permissions:
   contents: write
@@ -19,7 +19,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode .bootstrap/starter.zip.xz.b64 > /tmp/starter.zip.xz
+          cat .bootstrap/starter.zip.xz.b64 .bootstrap/starter.part2.b64 .bootstrap/starter.part3.b64 .bootstrap/starter.part4.b64 .bootstrap/starter.part5.b64 > /tmp/starter.zip.xz.b64
+          base64 --decode /tmp/starter.zip.xz.b64 > /tmp/starter.zip.xz
           xz --decompress --stdout /tmp/starter.zip.xz > /tmp/starter.zip
           mkdir -p /tmp/starter-unpacked
           unzip -q /tmp/starter.zip -d /tmp/starter-unpacked
