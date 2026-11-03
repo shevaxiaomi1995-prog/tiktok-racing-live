@@ -211,8 +211,19 @@ $('reset-winners').addEventListener('click',()=>{if(confirm('Сбросить т
 $('export-winners').addEventListener('click',()=>{const rows=[['Зритель','Победы','Участия'],...Object.entries(winners).sort((a,b)=>b[1].wins-a[1].wins).map(([n,v])=>[n,v.wins,v.participations])];const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='tiktok-racing-winners.csv';a.click();URL.revokeObjectURL(a.href)});
 loadForm();renderAll();
 
-// WebSocket receives normalized events from the local Node bridge.
-const wsUrl=import.meta.env.VITE_WS_URL||`ws://${location.hostname}:8787`;
+// WebSocket receives normalized events from the Node bridge.
+// On hosted preview, keep the game usable in demo mode until an event server URL is configured.
+const isLocalHost=['localhost','127.0.0.1'].includes(location.hostname);
+const wsUrl=import.meta.env.VITE_WS_URL||(isLocalHost?`ws://${location.hostname}:8787`:'');
 let socket;
-function connectSocket(){try{socket=new WebSocket(wsUrl);socket.addEventListener('open',()=>addFeed('Подключено к локальному event-серверу'));socket.addEventListener('message',e=>{try{processEvent(JSON.parse(e.data))}catch{}});socket.addEventListener('close',()=>setTimeout(connectSocket,3500));socket.addEventListener('error',()=>socket.close())}catch{setTimeout(connectSocket,5000)}}
+function connectSocket(){
+  if(!wsUrl){addFeed('Режим предпросмотра: LIVE-сервер пока не подключён');return}
+  try{
+    socket=new WebSocket(wsUrl);
+    socket.addEventListener('open',()=>addFeed('Подключено к LIVE event-серверу'));
+    socket.addEventListener('message',e=>{try{processEvent(JSON.parse(e.data))}catch{}});
+    socket.addEventListener('close',()=>setTimeout(connectSocket,3500));
+    socket.addEventListener('error',()=>socket.close());
+  }catch{setTimeout(connectSocket,5000)}
+}
 connectSocket();
