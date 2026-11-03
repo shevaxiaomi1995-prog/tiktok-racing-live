@@ -1,0 +1,37 @@
+name: Expand starter project
+
+on:
+  push:
+    paths:
+      - ".bootstrap/starter.zip.xz.b64"
+
+permissions:
+  contents: write
+
+jobs:
+  expand:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Expand starter archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode .bootstrap/starter.zip.xz.b64 > /tmp/starter.zip.xz
+          xz --decompress --stdout /tmp/starter.zip.xz > /tmp/starter.zip
+          mkdir -p /tmp/starter-unpacked
+          unzip -q /tmp/starter.zip -d /tmp/starter-unpacked
+          cp -a /tmp/starter-unpacked/tiktok-racing-live/. .
+          rm -rf .bootstrap
+
+      - name: Commit project files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Expand TikTok Racing LIVE starter project"
+          git push
