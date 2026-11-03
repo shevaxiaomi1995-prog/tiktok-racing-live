@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080c1b" />
+    <title>TikTok Racing LIVE</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">🏁</span><div><strong>TIKTOK RACING</strong><small>LIVE ARENA</small></div></div>
+        <div class="live-pill"><span class="live-dot"></span> DEMO MODE</div>
+      </header>
+
+      <main class="layout">
+        <section class="game-column">
+          <div class="race-heading">
+            <div><div class="eyebrow">ARCADE RACING EXPERIENCE</div><h1>RACING <span>ARENA</span></h1></div>
+            <div class="race-state" id="race-state">ОЖИДАНИЕ УЧАСТНИКОВ</div>
+          </div>
+
+          <section class="track-card">
+            <div class="track-hud">
+              <div><span class="hud-label">СТАТУС</span><strong id="phase-label">Ожидание</strong></div>
+              <div class="timer-box"><span class="hud-label" id="timer-label">ДО СТАРТА</span><strong id="timer">10 / 50</strong></div>
+              <div><span class="hud-label">УЧАСТНИКИ</span><strong id="participant-count">0 / 50</strong></div>
+            </div>
+            <div id="scene-wrap"><div id="scene-loading">Загружаем 3D-трассу…</div></div>
+            <div class="track-footer"><span>⚡ Бустеры меняют скорость машин</span><span>🏆 Победитель попадёт в рейтинг эфира</span></div>
+          </section>
+
+          <section class="bottom-grid">
+            <div class="panel participants-panel">
+              <div class="panel-title"><h2>Участники гонки</h2><span id="participant-status">Ожидаем команду «Старт»</span></div>
+              <div id="participants-list" class="participants-list"><div class="empty-state">Пока никто не присоединился.<br />Напиши «Старт» в тестовом чате справа.</div></div>
+            </div>
+            <div class="panel activity-panel">
+              <div class="panel-title"><h2>Последние события</h2><span class="live-label">LIVE FEED</span></div>
+              <div id="activity-feed" class="activity-feed"><div class="feed-item muted">События появятся здесь.</div></div>
+            </div>
+          </section>
+        </section>
+
+        <aside class="side-column">
+          <section class="panel leaderboard-panel">
+            <div class="panel-title"><div><div class="eyebrow">ЭТОТ ЭФИР</div><h2>🏆 Победители</h2></div><span class="count-chip" id="wins-total">0 побед</span></div>
+            <div id="winners-list" class="winners-list"><div class="empty-state compact">Победители появятся после первой гонки.</div></div>
+            <div class="leaderboard-actions"><button class="btn btn-secondary btn-small" id="reset-winners">Сбросить таблицу</button><button class="btn btn-ghost btn-small" id="export-winners">Экспорт CSV</button></div>
+          </section>
+
+          <section class="panel admin-panel">
+            <div class="panel-title"><div><div class="eyebrow">HOST CONTROL</div><h2>Панель ведущего</h2></div><span class="lock-chip">ADMIN</span></div>
+            <div class="setting-grid">
+              <label>Минимум участников<input id="min-players" type="number" min="10" max="50" value="10" /></label>
+              <label>Максимум участников<input id="max-players" type="number" min="10" max="50" value="50" /></label>
+              <label>Таймер регистрации, сек.<input id="registration-seconds" type="number" min="30" max="900" value="180" /></label>
+              <label>Длительность гонки, сек.<input id="race-seconds" type="number" min="30" max="1800" value="300" /></label>
+              <label>Лайков на бустер<input id="likes-threshold" type="number" min="1" max="10000" value="100" /></label>
+              <label>Бустер за лайки, сек.<input id="likes-boost-duration" type="number" min="1" max="60" value="5" /></label>
+              <label>Сила бустера за лайки<input id="likes-boost-strength" type="number" min="1" max="5" step="0.1" value="1.5" /></label>
+            </div>
+            <div class="toggle-row"><span>Бустер за лайки</span><label class="switch"><input type="checkbox" id="likes-enabled" checked /><span></span></label></div>
+            <div class="toggle-row"><span>Разрешить пакости соперникам</span><label class="switch"><input type="checkbox" id="attacks-enabled" checked /><span></span></label></div>
+            <button class="btn btn-primary full-width" id="save-settings">Сохранить настройки</button>
+            <div class="admin-divider"></div>
+            <div class="panel-subtitle">Тестовые события</div>
+            <label class="demo-label">Ник зрителя<input id="demo-name" type="text" value="Cosmo_Racer" maxlength="24" /></label>
+            <div class="demo-buttons"><button class="btn btn-secondary" id="demo-join">+ Старт</button><button class="btn btn-secondary" id="demo-likes">+100 лайков</button></div>
+            <label class="demo-label">Подарок<select id="demo-gift"></select></label>
+            <div class="demo-buttons"><button class="btn btn-gift" id="demo-send-gift">Отправить подарок</button><button class="btn btn-danger-soft" id="demo-attack">Пакость лидеру</button></div>
+            <p class="hint">Кнопки имитируют события для проверки. Они не отправляют сообщения и подарки в TikTok.</p>
+          </section>
+
+          <section class="panel gifts-panel">
+            <div class="panel-title"><div><div class="eyebrow">CUSTOM RULES</div><h2>Подарки и эффекты</h2></div><button class="icon-btn" id="add-gift" title="Добавить правило">＋</button></div>
+            <div id="gift-rules" class="gift-rules"></div>
+            <p class="hint">Названия подарков должны совпадать с тем, как их передаст подключённый LIVE-коннектор.</p>
+          </section>
+        </aside>
+      </main>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
