@@ -257,10 +257,10 @@ function addGate(t,label,accent){
   const postMat=new THREE.MeshStandardMaterial({color:accent,metalness:.35,roughness:.38});
   for(const side of [-1,1]){
     const post=new THREE.Mesh(new THREE.BoxGeometry(.8,8,.8),postMat);
-    post.position.set(s.normal.x*side*(TRACK_WIDTH/2+1),4,s.normal.z*side*(TRACK_WIDTH/2+1));
+    post.position.set(side*(TRACK_WIDTH/2+1),4,0);
     gate.add(post);
   }
-  const bar=new THREE.Mesh(new THREE.BoxGeometry(1.0,.9,TRACK_WIDTH+4),postMat);
+  const bar=new THREE.Mesh(new THREE.BoxGeometry(TRACK_WIDTH+4,.9,.8),postMat);
   bar.position.y=8;gate.add(bar);
   const bannerCanvas=document.createElement('canvas');bannerCanvas.width=1024;bannerCanvas.height=192;
   const ctx=bannerCanvas.getContext('2d');
@@ -269,7 +269,7 @@ function addGate(t,label,accent){
   ctx.fillStyle='#ffffff';ctx.font='bold 104px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,512,100);
   const texture=new THREE.CanvasTexture(bannerCanvas);texture.colorSpace=THREE.SRGBColorSpace;
   const sign=new THREE.Mesh(new THREE.PlaneGeometry(TRACK_WIDTH+3,5.2),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
-  sign.position.set(0,8.2,0);gate.add(sign);
+  sign.position.set(0,8.2,.46);gate.add(sign);
   const yaw=Math.atan2(-s.tangent.x,-s.tangent.z);
   gate.position.copy(s.point);gate.position.y=0;gate.rotation.y=yaw;scene.add(gate);
   const lineMat=new THREE.MeshStandardMaterial({color:'#f6f5eb',roughness:.8});
@@ -524,7 +524,8 @@ function renderStatus(){
         :'Финишировали '+finished+' из '+players.length+' • цель '+formatTime(config.raceSeconds);
     }
   }
-  renderFinishOverlay();
+  const finishOverlay=$('finish-overlay');
+  if(finishOverlay)finishOverlay.hidden=phase!=='results';
 }
 function renderAll(){renderParticipants();renderWinners();renderStatus();}
 function finishRace(){
