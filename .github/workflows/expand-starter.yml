@@ -15,11 +15,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Expand starter archive
+      - name: Validate and expand starter archive
         shell: bash
         run: |
           set -euo pipefail
-          cat .bootstrap/starter.zip.xz.b64 .bootstrap/starter.part2.b64 .bootstrap/starter.part3.b64 .bootstrap/starter.part4.b64 .bootstrap/starter.part5.b64 > /tmp/starter.zip.xz.b64
+          cat .bootstrap/starter.zip.xz.b64 .bootstrap/starter.part2.b64 .bootstrap/starter.part3.b64 .bootstrap/starter.part4.b64 .bootstrap/starter.part5.b64 .bootstrap/starter.part6.b64 > /tmp/starter.zip.xz.b64
+          test "$(wc -c < /tmp/starter.zip.xz.b64)" -eq 25512
           base64 --decode /tmp/starter.zip.xz.b64 > /tmp/starter.zip.xz
           xz --decompress --stdout /tmp/starter.zip.xz > /tmp/starter.zip
           mkdir -p /tmp/starter-unpacked
