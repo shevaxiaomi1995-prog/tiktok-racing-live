@@ -8,7 +8,7 @@ const server=http.createServer(app);
 const wss=new WebSocketServer({server,path:'/ws'});
 const PORT=Number(process.env.PORT||8787);
 const EVENT_INGEST_TOKEN=process.env.EVENT_INGEST_TOKEN||'';
-const ALLOW_DEMO_EVENTS=(process.env.ALLOW_DEMO_EVENTS??'true')==='true';
+const ALLOW_DEMO_EVENTS=(process.env.ALLOW_DEMO_EVENTS??'false')==='true';
 app.use(express.json({limit:'64kb'}));
 
 function publish(event){
