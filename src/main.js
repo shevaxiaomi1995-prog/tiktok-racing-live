@@ -273,7 +273,7 @@ function addGate(t,label,accent){
   const yaw=Math.atan2(-s.tangent.x,-s.tangent.z);
   gate.position.copy(s.point);gate.position.y=0;gate.rotation.y=yaw;scene.add(gate);
   const lineMat=new THREE.MeshStandardMaterial({color:'#f6f5eb',roughness:.8});
-  const line=new THREE.Mesh(new THREE.BoxGeometry(2,.08,TRACK_WIDTH),lineMat);
+  const line=new THREE.Mesh(new THREE.BoxGeometry(TRACK_WIDTH,.08,2),lineMat);
   line.position.copy(s.point);line.position.y=.12;line.rotation.y=yaw;scene.add(line);
 }
 addGate(0,'START','#25d0ec');
