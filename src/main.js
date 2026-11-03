@@ -39,7 +39,7 @@ function addPlayer(username){
   if(phase==='race'){addFeed(`${name}: регистрация уже закрыта`);return false}
   if(findPlayer(name)){addFeed(`${name} уже участвует`);return false}
   if(players.length>=config.maxPlayers){addFeed(`Лимит ${config.maxPlayers} участников достигнут`);return false}
-  const p={id:crypto.randomUUID?.()||String(Date.now()+Math.random()),username:name,color:COLORS[players.length%COLORS.length],distance:0,likes:0,likeRemainder:0,effects:[],shieldUntil:0,mesh:null,label:null};
+  const p={id:crypto.randomUUID?.()||String(Date.now()+Math.random()),username:name,color:COLORS[players.length%COLORS.length],distance:0,gridSlot:players.length,lane:(players.length%2===0?-1.55:1.55),likes:0,likeRemainder:0,effects:[],shieldUntil:0,mesh:null,label:null};
   players.push(p);addFeed(`${name} присоединился к гонке`);
   if(players.length>=config.minPlayers&&phase==='waiting'){
     phase='registration';registrationDeadline=Date.now()+config.registrationSeconds*1000;
@@ -105,7 +105,7 @@ scene.background=new THREE.Color('#9fc9e8');
 scene.fog=new THREE.Fog('#9fc9e8',85,175);
 
 const camera=new THREE.PerspectiveCamera(43,1,.1,260);
-camera.position.set(0,58,72);
+camera.position.set(0,66,78);
 camera.lookAt(0,0,0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
