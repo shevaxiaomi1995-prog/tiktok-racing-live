@@ -36,7 +36,17 @@
 
 ## Размещение
 
-Frontend на Vite можно разместить как статический сайт. Текущий `server/index.js` запускается как отдельный Node.js-сервер, поэтому для него нужен хост, который поддерживает постоянно работающий Node.js-процесс и WebSocket. Vercel уже поддерживает WebSocket в Functions, но этот стартовый сервер пока не адаптирован под формат Vercel Function; при таком варианте дополнительно понадобится общий pub/sub или Redis для синхронизации событий между разными экземплярами Functions. При сборке frontend укажи `VITE_WS_URL=wss://адрес-сервера/ws`.
+### Frontend на Vercel
+
+Репозиторий рассчитан на Vercel как Vite-приложение: команда сборки `npm run build`, папка результата `dist`. На первом деплое сайт откроется в режиме предпросмотра; тестовые кнопки в панели ведущего работают без TikTok и без event-сервера.
+
+Для импорта выбери репозиторий `shevaxiaomi1995-prog/tiktok-racing-live`, Framework Preset `Vite`, Build Command `npm run build`, Output Directory `dist`. Не добавляй секреты на frontend.
+
+### LIVE event-сервер
+
+`server/index.js` — отдельный Node.js/Express + WebSocket процесс. Для настоящих LIVE-событий его нужно разместить отдельно на хостинге, поддерживающем постоянно работающий Node.js-процесс и WebSocket, и задать на Vercel переменную `VITE_WS_URL=wss://АДРЕС_СЕРВЕРА/ws` с последующим redeploy. Не задавай её до запуска event-сервера. В Vercel Functions поддержка WebSocket появилась, но текущий `server/index.js` ещё не переписан в формат Function; нельзя считать его автоматически работающим на Vercel.
+
+Для production event-сервера задай `EVENT_INGEST_TOKEN` и `ALLOW_DEMO_EVENTS=false`. Не включай демо endpoint на публичном сервере.
 
 ## Что ещё не подключено
 
