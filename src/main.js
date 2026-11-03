@@ -19,6 +19,9 @@ let players = [];
 let winners = loadWinners();
 let raceDeadline = 0;
 let registrationDeadline = 0;
+let raceStartedAt = 0;
+let raceResults = [];
+let resultsTimer = null;
 let liveSessionActive = false;
 let raceNumber = 0;
 let activity = [];
@@ -39,7 +42,7 @@ function addPlayer(username){
   if(phase==='race'){addFeed(`${name}: регистрация уже закрыта`);return false}
   if(findPlayer(name)){addFeed(`${name} уже участвует`);return false}
   if(players.length>=config.maxPlayers){addFeed(`Лимит ${config.maxPlayers} участников достигнут`);return false}
-  const p={id:crypto.randomUUID?.()||String(Date.now()+Math.random()),username:name,color:COLORS[players.length%COLORS.length],distance:0,gridSlot:players.length,lane:(players.length%2===0?-1.55:1.55),likes:0,likeRemainder:0,effects:[],shieldUntil:0,mesh:null,label:null};
+  const p={id:crypto.randomUUID?.()||String(Date.now()+Math.random()),username:name,color:COLORS[players.length%COLORS.length],distance:0,gridSlot:players.length,likes:0,likeRemainder:0,effects:[],shieldUntil:0,finished:false,finishTime:null,mesh:null,label:null};
   players.push(p);addFeed(`${name} присоединился к гонке`);
   if(players.length>=config.minPlayers&&phase==='waiting'){
     phase='registration';registrationDeadline=Date.now()+config.registrationSeconds*1000;
@@ -49,7 +52,7 @@ function addPlayer(username){
   renderAll();syncCars();return true;
 }
 function applyEffect(player,effect,duration,strength=1){
-  if(!player)return;
+  if(!player||player.finished)return;
   const now=Date.now();
   if(effect==='shield'){player.shieldUntil=Math.max(player.shieldUntil,now+duration*1000);addFeed(`${player.username}: активирован щит`);return}
   if(effect==='pushback'){
@@ -61,7 +64,7 @@ function applyEffect(player,effect,duration,strength=1){
   const labels={boost:'получил ускорение',slow:'замедлен',stun:'оглушён'};
   addFeed(`${player.username}: ${labels[effect]||'получил эффект'}`);
 }
-function pickTarget(username){if(username){const target=findPlayer(username);if(target)return target}return [...players].sort((a,b)=>b.distance-a.distance)[0]||null}
+function pickTarget(username){if(username){const target=findPlayer(username);if(target&&!target.finished)return target}return [...players].filter(p=>!p.finished).sort((a,b)=>b.distance-a.distance)[0]||null}
 function processEvent(event){
   if(!event||typeof event!=='object')return;
   const type=String(event.type||'').toLowerCase();
