@@ -280,7 +280,14 @@ addGate(0,'START','#25d0ec');
 addGate(1,'FINISH','#f4b849');
 
 // Spectator stands, pit buildings and trees along both sides of the long course.
+// Seats are instanced so a full 50-car field remains responsive.
 const standColors=['#e85b72','#f2c25e','#3dc4df','#8877e8','#f4f5ef'];
+const seatGeometry=new THREE.BoxGeometry(1.35,.35,.72);
+const seatInstances=standColors.map(color=>new THREE.InstancedMesh(
+  seatGeometry,new THREE.MeshStandardMaterial({color,roughness:.7}),704
+));
+const seatCounts=standColors.map(()=>0);
+const seatDummy=new THREE.Object3D();
 for(const x of [-390,-80,260,520]){
   for(const side of [-1,1]){
     const z=side*54;
@@ -288,15 +295,17 @@ for(const x of [-390,-80,260,520]){
     for(let row=0;row<4;row++){
       addBox(46,.55,1.1,'#7e8fa1',x,2.0+row*.72,z+side*(row*.55));
       for(let seat=0;seat<22;seat++){
-        const seatMesh=new THREE.Mesh(
-          new THREE.BoxGeometry(1.35,.35,.72),
-          new THREE.MeshStandardMaterial({color:standColors[(seat+row)%standColors.length],roughness:.7})
-        );
-        seatMesh.position.set(x-21.5+seat*2.05,2.35+row*.72,z+side*(row*.55));scene.add(seatMesh);
+        const colorIndex=(seat+row)%standColors.length;
+        seatDummy.position.set(x-21.5+seat*2.05,2.35+row*.72,z+side*(row*.55));
+        seatDummy.rotation.set(0,0,0);seatDummy.updateMatrix();
+        seatInstances[colorIndex].setMatrixAt(seatCounts[colorIndex]++,seatDummy.matrix);
       }
     }
   }
 }
+seatInstances.forEach((mesh,i)=>{
+  mesh.count=seatCounts[i];mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);
+});
 addBox(32,4,12,'#e8eef1',-210,2,-58);
 addBox(34,.8,13,'#35bfd1',-210,4.4,-58);
 addBox(28,3,10,'#dce8ed',390,1.5,58);
